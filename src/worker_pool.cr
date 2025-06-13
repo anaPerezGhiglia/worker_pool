@@ -1,6 +1,6 @@
 class WorkerPool(A)
 
-    def initialize(buffer_capacity : Int32, pool_size : Int32, &builder : (Channel(A), Int32) -> Worker(A))
+    def initialize(*, buffer_capacity : Int32, pool_size : Int32, &builder : (Channel(A), Int32) -> Worker(A))
         @channel = Channel(A).new(buffer_capacity)
 
         @workers = Array(Worker(A)).new(pool_size)

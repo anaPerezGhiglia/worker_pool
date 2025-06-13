@@ -12,7 +12,7 @@ class Mailman < Worker(String)
 
 end
 
-fiber_pool = WorkerPool(String).new(10, 3) {|channel, id|
+fiber_pool = WorkerPool(String).new buffer_capacity: 10, pool_size: 3 {|channel, id|
     Mailman.new(channel, id)
 }
 
