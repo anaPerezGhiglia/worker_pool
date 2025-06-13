@@ -1,23 +1,22 @@
 require "./src/worker_pool"
 
 class Mailman < Worker(String)
-    @count = 0
+  @count = 0
 
-    def process(workload : String)
-        @count += 1
-        puts "Worker##{@id}: Processing mail ##{@count} -> #{workload}"
-        sleep 1.seconds
-        puts "Worker##{@id}: Done with ##{@count}"
-    end
-
+  def process(workload : String)
+    @count += 1
+    puts "Worker##{@id}: Processing mail ##{@count} -> #{workload}"
+    sleep 1.seconds
+    puts "Worker##{@id}: Done with ##{@count}"
+  end
 end
 
-fiber_pool = WorkerPool(String).new buffer_capacity: 10, pool_size: 3 {|channel, id|
-    Mailman.new(channel, id)
+fiber_pool = WorkerPool(String).new buffer_capacity: 10, pool_size: 3 { |channel, id|
+  Mailman.new(channel, id)
 }
 
 10.times do |i|
-    fiber_pool.process("This is mail ##{i}")
+  fiber_pool.process("This is mail ##{i}")
 end
 puts("Finished pushing mails")
 
