@@ -11,8 +11,8 @@ module WorkerPool
     # It spawns as many fiber as specified by *pool_size*.
     # Each spawned fiber instantiates and start a new `Worker`
     def initialize(*, buffer_capacity : Int32, pool_size : Int32, &builder : (Channel(A), Int32) -> Worker(A))
-      Log.debug {"Starting new Pool with buffer_capacity: #{buffer_capacity} & pool_size: #{pool_size}"}
-      
+      Log.debug { "Starting new Pool with buffer_capacity: #{buffer_capacity} & pool_size: #{pool_size}" }
+
       @channel = Channel(A).new(buffer_capacity)
 
       @wait_group = WaitGroup.new(pool_size)
@@ -47,7 +47,7 @@ module WorkerPool
     end
   end
 
-  # This class defines a simple forever-running Worker.  
+  # This class defines a simple forever-running Worker.
   # The implementations of this abstract class will only
   # have to define the `process` and `on_error` methods to have
   # a simple but robust Worker
@@ -55,7 +55,7 @@ module WorkerPool
     Log = ::Log.for(self)
 
     def initialize(@channel : Channel(A), @id : Int32)
-      Log.debug {"Starting worker ##{@id}"}
+      Log.debug { "Starting worker ##{@id}" }
     end
 
     # Starts a new workload consumer that will be kept alive
@@ -68,10 +68,10 @@ module WorkerPool
           on_error ex
         end
       end
-      Log.debug {"Worker##{@id}: bye!"}
+      Log.debug { "Worker##{@id}: bye!" }
     end
 
-    # This method will get called each time 
+    # This method will get called each time
     # the worker processes a new workload
     abstract def process(workload : A)
 
