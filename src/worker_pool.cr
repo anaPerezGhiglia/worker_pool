@@ -1,17 +1,19 @@
-class WorkerPool(A)
+require "wait_group"
+
+class WorkerPool(A) 
+
   def initialize(*, buffer_capacity : Int32, pool_size : Int32, &builder : (Channel(A), Int32) -> Worker(A))
     @channel = Channel(A).new(buffer_capacity)
 
-    @workers = Array(Worker(A)).new(pool_size)
+    @wait_group = WaitGroup.new(pool_size)
     pool_size.times do |idx|
       spawn do
         worker = builder.call(@channel, idx)
-        # TODO: need to syncronize ?
-        @workers << worker
-
         # allow all workers to get created before start processing
         Fiber.yield
         worker.start
+      ensure
+        @wait_group.done
       end
     end
   end
@@ -20,14 +22,16 @@ class WorkerPool(A)
     @channel.send workload
   end
 
-  # TODO: think if it makes sense to do someting
-  # with the elements that may never get processed
-  # because the channel was closed before they got consumed
+  ## Closes channel so no new workloads can be enqueued
+  ## workers will process all the already enqueued workload
+  ## before terminating and ending fiber lifecycle
   def terminate
     @channel.close
-    @workers.each do |worker|
-      worker.terminate
-    end
+  end
+
+  ## Waits until all workers have finished their work
+  def wait
+    @wait_group.wait
   end
 end
 
@@ -37,18 +41,16 @@ abstract class Worker(A)
   end
 
   def start
-    @running = true
-    while @running
-      workload = @channel.receive
-      process workload
+    while workload = @channel.receive?
+      begin
+        process workload
+      rescue ex
+        on_error ex
+      end
     end
     puts "Worker##{@id}: bye!"
   end
 
-  def terminate
-    puts "Worker##{@id}: Finishing work.."
-    @running = false
-  end
-
   abstract def process(workload : A)
+  abstract def on_error(error)
 end
