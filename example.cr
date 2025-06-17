@@ -1,6 +1,6 @@
 require "./src/worker_pool"
 
-class Mailman < Worker(String)
+class Mailman < WorkerPool::Worker(String)
   @count = 0
   @random = Random.new
 
@@ -19,7 +19,7 @@ class Mailman < Worker(String)
   end
 end
 
-fiber_pool = WorkerPool(String).new buffer_capacity: 10, pool_size: 3 { |channel, id|
+fiber_pool = WorkerPool::Pool(String).new buffer_capacity: 10, pool_size: 3 { |channel, id|
   Mailman.new(channel, id)
 }
 
