@@ -1,0 +1,11 @@
+name: worker_pool
+description: |
+  Minimalistic worker pool implementation to split workload between concurrent workers in a bounded manner
+version: 0.1.0
+
+authors:
+  - Ana Perez Ghiglia <aghiglia@manas.tech>
+
+crystal: '>= 1.16.3'
+
+license: MIT

@@ -1,8 +1,12 @@
 require "wait_group"
 
 module WorkerPool
-  class Pool(A) 
+  VERSION = "0.1.0"
 
+  class Pool(A)
+    # Creates a new `Pool` instance.
+    # It spawns as many fiber as specified by *pool_size*.
+    # Each spawned fiber instantiates and start a new `Worker`
     def initialize(*, buffer_capacity : Int32, pool_size : Int32, &builder : (Channel(A), Int32) -> Worker(A))
       @channel = Channel(A).new(buffer_capacity)
 
@@ -19,28 +23,36 @@ module WorkerPool
       end
     end
 
+    # Registers new wokload to be processed by the Pool
     def process(workload : A)
       @channel.send workload
     end
 
-    ## Closes channel so no new workloads can be enqueued
-    ## workers will process all the already enqueued workload
-    ## before terminating and ending fiber lifecycle
+    # Closes the pool so it does not accept new workloads for processing.
+    # However, the pool remains operative until workers finish processing
+    # all the workload enqueued before `terminate` was called
     def terminate
       @channel.close
     end
 
-    ## Waits until all workers have finished their work
+    # Waits until all workers have finished
+    # (there are no more active Worker fibers)
     def wait
       @wait_group.wait
     end
   end
 
+  # This class defines a simple forever-running Worker.  
+  # The implementations of this abstract class will only
+  # have to define the `process` and `on_error` methods to have
+  # a simple but robust Worker
   abstract class Worker(A)
     def initialize(@channel : Channel(A), @id : Int32)
       puts "Starting worker ##{@id}"
     end
 
+    # Starts a new workload consumer that will be kept alive
+    # as long as the channel is open
     def start
       while workload = @channel.receive?
         begin
@@ -52,7 +64,12 @@ module WorkerPool
       puts "Worker##{@id}: bye!"
     end
 
+    # This method will get called each time 
+    # the worker processes a new workload
     abstract def process(workload : A)
+
+    # This method will get called whenever an error
+    # raises when processing a new workload
     abstract def on_error(error)
   end
 end
