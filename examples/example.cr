@@ -1,4 +1,5 @@
-require "./src/worker_pool"
+require "../src/worker_pool"
+require "log"
 
 class Mailman < WorkerPool::Worker(String)
   @count = 0
@@ -6,19 +7,20 @@ class Mailman < WorkerPool::Worker(String)
 
   def process(workload : String)
     @count += 1
-    puts "Worker##{@id}: Processing mail ##{@count} -> #{workload}"
+    Log.info {"Worker##{@id}: Processing mail ##{@count} -> #{workload}"}
     sleep 1.seconds
     if @random.next_bool
       raise "Ooops, something went wrong :("
     end
-    puts "Worker##{@id}: Done with ##{@count}"
+    Log.info {"Worker##{@id}: Done with ##{@count}"}
   end
 
   def on_error(error)
-    puts("Worker##{@id}: Caught exception: #{error}")
+    Log.info {"Worker##{@id}: Caught exception: #{error}"}
   end
 end
 
+Log.setup(:debug)
 fiber_pool = WorkerPool::Pool(String).new buffer_capacity: 10, pool_size: 3 { |channel, id|
   Mailman.new(channel, id)
 }
@@ -26,7 +28,7 @@ fiber_pool = WorkerPool::Pool(String).new buffer_capacity: 10, pool_size: 3 { |c
 10.times do |i|
   fiber_pool.process("This is mail ##{i}")
 end
-puts("Finished pushing mails")
+Log.debug {"Finished pushing mails"}
 
 # We terminate it "quick" to evidence
 # what happens when fiber_pool gets terminated

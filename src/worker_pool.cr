@@ -1,13 +1,18 @@
+require "log"
 require "wait_group"
 
 module WorkerPool
   VERSION = "0.1.0"
 
   class Pool(A)
+    Log = ::Log.for(self)
+
     # Creates a new `Pool` instance.
     # It spawns as many fiber as specified by *pool_size*.
     # Each spawned fiber instantiates and start a new `Worker`
     def initialize(*, buffer_capacity : Int32, pool_size : Int32, &builder : (Channel(A), Int32) -> Worker(A))
+      Log.debug {"Starting new Pool with buffer_capacity: #{buffer_capacity} & pool_size: #{pool_size}"}
+      
       @channel = Channel(A).new(buffer_capacity)
 
       @wait_group = WaitGroup.new(pool_size)
@@ -47,8 +52,10 @@ module WorkerPool
   # have to define the `process` and `on_error` methods to have
   # a simple but robust Worker
   abstract class Worker(A)
+    Log = ::Log.for(self)
+
     def initialize(@channel : Channel(A), @id : Int32)
-      puts "Starting worker ##{@id}"
+      Log.debug {"Starting worker ##{@id}"}
     end
 
     # Starts a new workload consumer that will be kept alive
@@ -61,7 +68,7 @@ module WorkerPool
           on_error ex
         end
       end
-      puts "Worker##{@id}: bye!"
+      Log.debug {"Worker##{@id}: bye!"}
     end
 
     # This method will get called each time 
